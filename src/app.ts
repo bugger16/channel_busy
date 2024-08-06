@@ -1,9 +1,9 @@
+import { format, parse } from 'date-fns';
 // Import dependencies
 import * as fs from 'fs';
 import * as path from 'path';
 
 import * as _if from './Interface/interface'
-import { format, parse } from 'date-fns';
 
 // Function to read JSON file and convert it to object
 function readJsonFile(filePath: string): _if.Root {
@@ -29,21 +29,34 @@ function convertToCSV(input: string): string {
     return csvOutput.trim();
 }
 
-function alignCSV(date: Date, input: string): string {
+function alignCSV(date: Date,input: string): string {
     
     const lines = input.split('\n');
-    const regex = /TRA\d{4}/;
+    const TRARegex = /TRA\d{4}/;
+    const MACAddress00Regex = /00:00:00:00:00:00/;
     const date_time = format(date, 'yyyy-MM-dd HH:mm:ss');
     let lastTRAInfo = "";
     let csvOutput = '';
+    const lineCount = lines.length;
     
-    for(const line of lines) {
-        if(regex.test(line)) {
-            lastTRAInfo = line;
-            csvOutput += date_time + ','  + line + '\n';
-            
+    for(let i = 0; i < lineCount; i++) {
+        const line = lines[i];
+        if(TRARegex.test(line)) {
+            // Must check line length
+            if(i < lineCount - 1) {
+                const nextLine = lines[i+1]
+                if(TRARegex.test(nextLine)){ // next line is TRA
+                    csvOutput +=  date_time + ',' + line + '\n';      
+                } else {
+                    lastTRAInfo = line;
+                }
+            } 
         } else {
-            csvOutput += date_time + ',' + lastTRAInfo + ',' + line + '\n';
+            if(MACAddress00Regex.test(line)) {
+                csvOutput +=  date_time + ',' + lastTRAInfo + '\n';
+            } else {
+                csvOutput +=  date_time + ',' + lastTRAInfo + ',' + line + '\n';
+            }
         }
     }
     return csvOutput.trim();
@@ -67,15 +80,27 @@ function main() {
         process.exit(1);
     }
     for (const entry of myObject.log.entries) {
-        const dateStr = entry.response.headers[0].value;
-        const date = parse(dateStr, 'EEE MMM dd HH:mm:ss yyyy', new Date());
+        let dateStr = entry.response.headers[0].value;
+        const fixedString = dateStr.replace(/\s{2,}/g, ' ');
+        const date = parse(fixedString, 'EEE MMM d HH:mm:ss yyyy', new Date());
         const csv = convertToCSV(entry.response.content.text);
         const csvFinal = alignCSV(date, csv);
         output += csvFinal + '\n';
     }
     const fileName = `output_${myObject.log.entries[0].response.headers[0].value}_${myObject.log.entries[myObject.log.entries.length - 1].response.headers[0].value}.csv`;
     exportToFile(fileName,output)
-    //console.log(output)
+    /**
+     * Test on entity
+     */
+    /*
+    const dateStr =  myObject.log.entries[0].response.headers[0].value;
+    const date = parse(dateStr, 'EEE MMM dd HH:mm:ss yyyy', new Date());
+    const csv = convertToCSV( myObject.log.entries[0].response.content.text);
+    console.log(csv);
+    console.log("\n");
+    const csvFinal = alignCSV(date, csv);
+    console.log(csvFinal)
+    */
 }
 
 main();
