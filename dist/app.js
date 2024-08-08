@@ -85,6 +85,7 @@ function exportToFile(filePath, data) {
     fs.writeFileSync(filePath, data);
 }
 function main() {
+    var _a;
     const filePath = process.argv.slice(2);
     let output = 'Date Time, AP_IP,AP_MAC,Channel No.,Noise Level (dBm),Channel Busy(%),AP Status,TRA,MDR_IP,MDR_MAC,UK 1,UK 2,MDR Status,MDR\n';
     if (filePath.length === 0) {
@@ -98,12 +99,16 @@ function main() {
         process.exit(1);
     }
     for (const entry of myObject.log.entries) {
-        let dateStr = entry.response.headers[0].value;
-        const fixedString = dateStr.replace(/\s{2,}/g, ' ');
-        const date = (0, date_fns_1.parse)(fixedString, 'EEE MMM d HH:mm:ss yyyy', new Date());
-        const csv = convertToCSV(entry.response.content.text);
-        const csvFinal = alignCSV(date, csv);
-        output += csvFinal + '\n';
+        let dateStr = (_a = entry.response.headers[0]) === null || _a === void 0 ? void 0 : _a.value;
+        if (dateStr) {
+            const fixedString = dateStr.replace(/\s{2,}/g, ' ');
+            const date = (0, date_fns_1.parse)(fixedString, 'EEE MMM d HH:mm:ss yyyy', new Date());
+            if ((0, date_fns_1.isValid)(date)) {
+                const csv = convertToCSV(entry.response.content.text);
+                const csvFinal = alignCSV(date, csv);
+                output += csvFinal + '\n';
+            }
+        }
     }
     const fileName = `output_${myObject.log.entries[0].response.headers[0].value}_${myObject.log.entries[myObject.log.entries.length - 1].response.headers[0].value}.csv`;
     exportToFile(fileName, output);

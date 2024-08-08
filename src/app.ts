@@ -1,4 +1,4 @@
-import { format, parse } from 'date-fns';
+import { format, isValid, parse } from 'date-fns';
 // Import dependencies
 import * as fs from 'fs';
 import * as path from 'path';
@@ -80,12 +80,16 @@ function main() {
         process.exit(1);
     }
     for (const entry of myObject.log.entries) {
-        let dateStr = entry.response.headers[0].value;
-        const fixedString = dateStr.replace(/\s{2,}/g, ' ');
-        const date = parse(fixedString, 'EEE MMM d HH:mm:ss yyyy', new Date());
-        const csv = convertToCSV(entry.response.content.text);
-        const csvFinal = alignCSV(date, csv);
-        output += csvFinal + '\n';
+        let dateStr = entry.response.headers[0]?.value;
+        if(dateStr) {
+            const fixedString = dateStr.replace(/\s{2,}/g, ' ');
+            const date = parse(fixedString, 'EEE MMM d HH:mm:ss yyyy', new Date());
+            if(isValid(date)) {
+                const csv = convertToCSV(entry.response.content.text);
+                const csvFinal = alignCSV(date, csv);
+                output += csvFinal + '\n';
+            }
+        }
     }
     const fileName = `output_${myObject.log.entries[0].response.headers[0].value}_${myObject.log.entries[myObject.log.entries.length - 1].response.headers[0].value}.csv`;
     exportToFile(fileName,output)
