@@ -5,6 +5,10 @@ import * as path from 'path';
 
 import * as _if from './Interface/interface'
 
+let startTime: Date;
+let startTimeFlag: boolean = true;
+let endTime: Date;
+
 // Function to read JSON file and convert it to object
 function readJsonFile(filePath: string): _if.Root {
     // Resolve the full path of the file
@@ -54,8 +58,10 @@ function alignCSV(date: Date,input: string): string {
         } else {
             if(MACAddress00Regex.test(line)) {
                 csvOutput +=  date_time + ',' + lastTRAInfo + '\n';
-            } else {
+            } else if (line.includes("MDR_")) {
                 csvOutput +=  date_time + ',' + lastTRAInfo + ',' + line + '\n';
+            } else {
+                // Do nothing becase this line is not fulfill condition
             }
         }
     }
@@ -85,13 +91,19 @@ function main() {
             const fixedString = dateStr.replace(/\s{2,}/g, ' ');
             const date = parse(fixedString, 'EEE MMM d HH:mm:ss yyyy', new Date());
             if(isValid(date)) {
+                if (startTimeFlag) {
+                    startTime = date;
+                    startTimeFlag = false;
+                }
                 const csv = convertToCSV(entry.response.content.text);
                 const csvFinal = alignCSV(date, csv);
+                endTime = date;
                 output += csvFinal + '\n';
             }
         }
     }
-    const fileName = `output_${myObject.log.entries[0].response.headers[0].value}_${myObject.log.entries[myObject.log.entries.length - 1].response.headers[0].value}.csv`;
+    const fileName = `output_${dateFormatter(startTime)}_${dateFormatter(endTime)}.csv`;
+    console.log(fileName)
     exportToFile(fileName,output)
     /**
      * Test on entity
@@ -105,6 +117,10 @@ function main() {
     const csvFinal = alignCSV(date, csv);
     console.log(csvFinal)
     */
+}
+
+function dateFormatter(date: Date):string {
+    return `${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2,'0')}${date.getDate().toString().padStart(2,'0')}_${date.getHours().toString().padStart(2,'0')}${date.getMinutes().toString().padStart(2,'0')}${date.getSeconds().toString().padStart(2,'0')}`
 }
 
 main();

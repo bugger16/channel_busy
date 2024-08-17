@@ -1,6 +1,5 @@
 node_modules/
+dist/*.js
+dist/*.js.map
+dist/interface/
 dist/
-*.js/
-*.js.map
-*.csv
-build

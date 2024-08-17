@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "./dist node app.js 14082024 -1351-10.241.1.11.har",
     "build": "tsc"
   },
   "keywords": [],
@@ -13,7 +13,10 @@
   "dependencies": {
     "@types/node": "^22.1.0",
     "date-fns": "^3.6.0",
-    "ts-node": "^10.9.2",
     "typescript": "^5.5.4"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0"
   }
 }

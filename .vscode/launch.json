@@ -1,12 +1,15 @@
 {
     "version": "0.2.0",
     "configurations": [ 
+
       
       {
         "type": "node",
         "request": "launch",
-        "name": "Launch Program",
-        "program": "${workspaceFolder}/dist/app.js", // ปรับให้ตรงกับตำแหน่งของไฟล์ JavaScript ที่คอมไพล์จาก TypeScript
+        "name": "Debug Channel busy",
+        "program": "${workspaceFolder}/src/app.ts", // ปรับให้ตรงกับตำแหน่งของไฟล์ JavaScript ที่คอมไพล์จาก TypeScript
+        "runtimeArgs": ["-r","ts-node/register", "-r","tsconfig-paths/register"],
+        "console": "integratedTerminal",
         "outFiles": ["${workspaceFolder}/dist/**/*.js"],
         "sourceMaps": true
       }
