@@ -5,9 +5,9 @@ import * as path from 'path';
 
 import * as _if from './Interface/interface'
 
-let startTime: Date;
+let startTime: Date = new Date();
 let startTimeFlag: boolean = true;
-let endTime: Date;
+let endTime: Date = new Date();
 
 // Function to read JSON file and convert it to object
 function readJsonFile(filePath: string): _if.Root {
@@ -33,12 +33,13 @@ function convertToCSV(input: string): string {
     return csvOutput.trim();
 }
 
-function alignCSV(date: Date,input: string): string {
+function alignCSV(date: Date,region: number,input: string): string {
     
     const lines = input.split('\n');
     const TRARegex = /TRA\d{4}/;
-    const MACAddress00Regex = /00:00:00:00:00:00/;
-    const date_time = format(date, 'yyyy-MM-dd HH:mm:ss');
+    const MACAddress00Regex = /00:00:00:00:00:00,0,0,0,Off/;
+    const _date = format(date, 'yyyy-MM-dd');
+    const _time = format(date, "HH:mm:ss")
     let lastTRAInfo = "";
     let csvOutput = '';
     const lineCount = lines.length;
@@ -50,16 +51,16 @@ function alignCSV(date: Date,input: string): string {
             if(i < lineCount - 1) {
                 const nextLine = lines[i+1]
                 if(TRARegex.test(nextLine)){ // next line is TRA
-                    csvOutput +=  date_time + ',' + line + '\n';      
+                    csvOutput +=  _date + ',' + _time + ',' + region + ',' + line + '\n';      
                 } else {
                     lastTRAInfo = line;
                 }
             } 
         } else {
             if(MACAddress00Regex.test(line)) {
-                csvOutput +=  date_time + ',' + lastTRAInfo + '\n';
+                csvOutput +=  _date + ',' + _time + ',' + region + ',' + lastTRAInfo + '\n';
             } else if (line.includes("MDR_")) {
-                csvOutput +=  date_time + ',' + lastTRAInfo + ',' + line + '\n';
+                csvOutput +=  _date + ',' + _time + ',' + region + ',' + lastTRAInfo + ',' + line + '\n';
             } else {
                 // Do nothing becase this line is not fulfill condition
             }
@@ -74,11 +75,16 @@ function exportToFile(filePath: string, data: any): void {
 
 function main() {
     const filePath = process.argv.slice(2);
-    let output = 'Date Time, AP_IP,AP_MAC,Channel No.,Noise Level (dBm),Channel Busy(%),AP Status,TRA,MDR_IP,MDR_MAC,UK 1,UK 2,MDR Status,MDR\n'; 
+    let output = 'date,time,region,ap_ip,ap_mac,channel_no,noise_level,channel_busy,ap_status,tra,mdr_ip,mdr_mac,unknow_1,unknow_2,mdr_status,mdr\n'; 
     if(filePath.length === 0) {
         console.error("Please provide at least one file.")
         process.exit(1);
     }
+    if (filePath[1] === undefined || !Number.isInteger((+filePath[1]))) {
+        console.error("Region no is incorrect (integer only)");
+        process.exit(1)
+    }
+    const region = +filePath[1];
     const myObject: _if.Root = readJsonFile(filePath[0])
     //console.log(myObject.log.entries.length)
     if (myObject.log.entries.length <= 0) {
@@ -91,32 +97,23 @@ function main() {
             const fixedString = dateStr.replace(/\s{2,}/g, ' ');
             const date = parse(fixedString, 'EEE MMM d HH:mm:ss yyyy', new Date());
             if(isValid(date)) {
-                if (startTimeFlag) {
-                    startTime = date;
-                    startTimeFlag = false;
-                }
                 const csv = convertToCSV(entry.response.content.text);
-                const csvFinal = alignCSV(date, csv);
-                endTime = date;
-                output += csvFinal + '\n';
+                const csvFinal = alignCSV(date,region,csv);
+                if (csvFinal !== '' && csvFinal !== undefined) {
+                    if (startTimeFlag) {
+                        startTime = date;
+                        startTimeFlag = false;
+                    }
+                    output += csvFinal + '\n';
+                    endTime = date;
+                }
+                
             }
         }
     }
-    const fileName = `output_${dateFormatter(startTime)}_${dateFormatter(endTime)}.csv`;
+    const fileName = `output_R${region}_${dateFormatter(startTime)}_${dateFormatter(endTime)}.csv`;
     console.log(fileName)
     exportToFile(fileName,output)
-    /**
-     * Test on entity
-     */
-    /*
-    const dateStr =  myObject.log.entries[0].response.headers[0].value;
-    const date = parse(dateStr, 'EEE MMM dd HH:mm:ss yyyy', new Date());
-    const csv = convertToCSV( myObject.log.entries[0].response.content.text);
-    console.log(csv);
-    console.log("\n");
-    const csvFinal = alignCSV(date, csv);
-    console.log(csvFinal)
-    */
 }
 
 function dateFormatter(date: Date):string {

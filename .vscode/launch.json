@@ -9,6 +9,7 @@
         "name": "Debug Channel busy",
         "program": "${workspaceFolder}/src/app.ts", // ปรับให้ตรงกับตำแหน่งของไฟล์ JavaScript ที่คอมไพล์จาก TypeScript
         "runtimeArgs": ["-r","ts-node/register", "-r","tsconfig-paths/register"],
+        "args": ["${workspaceFolder}/dist/20240816 1200-1800 10.241.1.11.har","1"],
         "console": "integratedTerminal",
         "outFiles": ["${workspaceFolder}/dist/**/*.js"],
         "sourceMaps": true
